@@ -19,15 +19,23 @@ import org.mule.api.MuleException;
 import org.mule.api.context.MuleContextAware;
 import org.mule.api.lifecycle.InitialisationException;
 import org.mule.api.lifecycle.Lifecycle;
+import org.mule.api.metadata.MetadataAware;
 import org.mule.api.processor.MessageProcessor;
 import org.mule.extension.api.ExtensionManager;
 import org.mule.extension.api.introspection.OperationModel;
 import org.mule.extension.api.introspection.RuntimeExtensionModel;
 import org.mule.extension.api.introspection.RuntimeOperationModel;
+import org.mule.extension.api.metadata.MetaDataKey;
+import org.mule.extension.api.metadata.MetadataAware;
+import org.mule.extension.api.metadata.MetadataContext;
 import org.mule.extension.api.runtime.ConfigurationInstance;
 import org.mule.extension.api.runtime.OperationContext;
 import org.mule.extension.api.runtime.OperationExecutor;
 import org.mule.internal.connection.ConnectionManagerAdapter;
+import org.mule.metadata.api.annotation.TypeAnnotation;
+import org.mule.metadata.api.model.MetadataFormat;
+import org.mule.metadata.api.model.MetadataType;
+import org.mule.metadata.api.visitor.MetadataTypeVisitor;
 import org.mule.module.extension.internal.runtime.DefaultExecutionMediator;
 import org.mule.module.extension.internal.runtime.DefaultOperationContext;
 import org.mule.module.extension.internal.runtime.ExecutionMediator;
@@ -35,6 +43,10 @@ import org.mule.module.extension.internal.runtime.OperationContextAdapter;
 import org.mule.module.extension.internal.runtime.resolver.ResolverSet;
 import org.mule.util.StringUtils;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import javax.inject.Inject;
 
 import org.slf4j.Logger;
@@ -56,7 +68,7 @@ import org.slf4j.LoggerFactory;
  *
  * @since 3.7.0
  */
-public final class OperationMessageProcessor implements MessageProcessor, MuleContextAware, Lifecycle
+public final class OperationMessageProcessor implements MessageProcessor, MuleContextAware, Lifecycle, MetadataAware
 {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(OperationMessageProcessor.class);
@@ -167,4 +179,83 @@ public final class OperationMessageProcessor implements MessageProcessor, MuleCo
         this.muleContext = muleContext;
     }
 
+    @Override
+    public List<MetaDataKey> getMetadataKeys(MuleEvent event) throws MuleException
+    {
+        if (operationModel.getMetaDataResolverFactory().isPresent()){
+            return operationModel.getMetaDataResolverFactory().get().createResolver().getMetaDataKeys(getMetadataContext(event));
+        }
+
+
+        //return Collections.singletonList(new NullMetaDataKey());
+    }
+
+    @Override
+    public MetadataType getContentMetadata(MuleEvent event, MetaDataKey key) throws MuleException
+    {
+        if (operationModel.getMetaDataResolverFactory().isPresent()){
+            return operationModel.getMetaDataResolverFactory().get().createResolver().getMetaData(getMetadataContext(event), key);
+        }
+
+        if (operationModel.getContentParameter().isPresent())
+        {
+            //FIXME  metadatatype
+            return operationModel.getContentParameter().get().getType();
+        }
+
+
+        // FIXME return generic type or fail?
+        return null;
+    }
+
+    @Override
+    public MetadataType getOutputMetadata(MuleEvent event, MetaDataKey key) throws MuleException
+    {
+        if (operationModel.getMetaDataResolverFactory().isPresent()){
+            return operationModel.getMetaDataResolverFactory().get().createResolver().getOutputMetaData(getMetadataContext(event), key);
+        }
+
+        //FIXME  metadatatype
+        return new MetadataType()
+        {
+            @Override
+            public MetadataFormat getMetadataFormat()
+            {
+                operationModel.getReturnType();
+                return null;
+            }
+
+            @Override
+            public <T extends TypeAnnotation> Collection<T> getAnnotation(Class<T> aClass)
+            {
+                return null;
+            }
+
+            @Override
+            public Collection<TypeAnnotation> getAnnotations()
+            {
+                return null;
+            }
+
+            @Override
+            public Optional<String> getDescription()
+            {
+                return null;
+            }
+
+            @Override
+            public void accept(MetadataTypeVisitor metadataTypeVisitor)
+            {
+
+            }
+        };
+
+    }
+
+    private MetadataContext getMetadataContext(MuleEvent event) throws MuleException
+    {
+        ConfigurationInstance<Object> configuration = getConfiguration(event);
+        OperationContext operationContext = createOperationContext(configuration, event);
+        return operationContext.getMetadataContext();
+    }
 }

@@ -32,11 +32,13 @@ import org.mule.extension.api.annotation.OnException;
 import org.mule.extension.api.annotation.Operations;
 import org.mule.extension.api.annotation.Sources;
 import org.mule.extension.api.annotation.connector.Providers;
+import org.mule.extension.api.annotation.metadata.MetaDataScope;
 import org.mule.extension.api.annotation.param.Connection;
 import org.mule.extension.api.annotation.param.Optional;
 import org.mule.extension.api.annotation.param.UseConfig;
 import org.mule.extension.api.annotation.param.display.Placement;
 import org.mule.extension.api.exception.IllegalModelDefinitionException;
+import org.mule.extension.api.introspection.DataType;
 import org.mule.extension.api.introspection.ExceptionEnricherFactory;
 import org.mule.extension.api.introspection.declaration.DescribingContext;
 import org.mule.extension.api.introspection.declaration.fluent.ConfigurationDescriptor;
@@ -53,6 +55,11 @@ import org.mule.extension.api.introspection.declaration.spi.Describer;
 import org.mule.extension.api.introspection.declaration.type.ExtensionsTypeLoaderFactory;
 import org.mule.extension.api.introspection.property.display.ImmutablePlacementModelProperty;
 import org.mule.extension.api.introspection.property.display.PlacementModelProperty;
+import org.mule.extension.api.introspection.metadata.MetadataResolverFactory;
+import org.mule.extension.api.introspection.property.ImmutablePasswordModelProperty;
+import org.mule.extension.api.introspection.property.ImmutableTextModelProperty;
+import org.mule.extension.api.introspection.property.PasswordModelProperty;
+import org.mule.extension.api.introspection.property.TextModelProperty;
 import org.mule.extension.api.runtime.source.Source;
 import org.mule.metadata.api.ClassTypeLoader;
 import org.mule.module.extension.internal.exception.IllegalConfigurationModelDefinitionException;
@@ -70,6 +77,7 @@ import org.mule.module.extension.internal.model.property.ParameterGroupModelProp
 import org.mule.module.extension.internal.model.property.TypeRestrictionModelProperty;
 import org.mule.module.extension.internal.runtime.exception.DefaultExceptionEnricherFactory;
 import org.mule.module.extension.internal.runtime.executor.ReflectiveOperationExecutorFactory;
+import org.mule.module.extension.internal.runtime.metadata.DefaultMetadataResolverFactory;
 import org.mule.module.extension.internal.runtime.source.DefaultSourceFactory;
 import org.mule.module.extension.internal.util.IntrospectionUtils;
 import org.mule.util.ArrayUtils;
@@ -381,11 +389,25 @@ public final class AnnotationsBasedDescriber implements Describer
                     .withModelProperty(ImplementingMethodModelProperty.KEY, new ImplementingMethodModelProperty(method))
                     .executorsCreatedBy(new ReflectiveOperationExecutorFactory<>(actingClass, method))
                     .whichReturns(IntrospectionUtils.getMethodReturnType(method, typeLoader))
-                    .withExceptionEnricherFactory(getExceptionEnricherFactory(method));
+                    .withExceptionEnricherFactory(getExceptionEnricherFactory(method))
+                    .withMetadataResolverFactory(getMetadataResolverFactory(extensionType, method));
 
             declareOperationParameters(method, operation);
             calculateExtendedTypes(actingClass, method, operation);
         }
+    }
+
+    private java.util.Optional<MetadataResolverFactory> getMetadataResolverFactory(Class<?> extensionType, Method method)
+    {
+        MetaDataScope metadataScopeAnnotation = method.getAnnotation(MetaDataScope.class);
+        metadataScopeAnnotation = metadataScopeAnnotation == null ? extensionType.getAnnotation(MetaDataScope.class) : metadataScopeAnnotation;
+
+        if (metadataScopeAnnotation != null)
+        {
+            return java.util.Optional.of(new DefaultMetadataResolverFactory(metadataScopeAnnotation.value()));
+        }
+
+        return java.util.Optional.empty();
     }
 
     private void declareConnectionProviders(DeclarationDescriptor declaration, Class<?> extensionType)

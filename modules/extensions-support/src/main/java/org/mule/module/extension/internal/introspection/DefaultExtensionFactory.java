@@ -222,7 +222,8 @@ public final class DefaultExtensionFactory implements ExtensionFactory
                                                   declaration.getReturnType(),
                                                   declaration.getModelProperties(),
                                                   declaration.getInterceptorFactories(),
-                                                  declaration.getExceptionEnricherFactory());
+                                                  declaration.getExceptionEnricherFactory(),
+                                                  declaration.getMetadataResolverFactory());
     }
 
     private List<ConnectionProviderModel> toConnectionProviders(List<ConnectionProviderDeclaration> declarations)
