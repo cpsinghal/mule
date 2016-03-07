@@ -12,6 +12,7 @@ import static org.mule.api.lifecycle.LifecycleUtils.startIfNeeded;
 import static org.mule.api.lifecycle.LifecycleUtils.stopIfNeeded;
 import static org.mule.config.i18n.MessageFactory.createStaticMessage;
 import static org.mule.module.extension.internal.util.IntrospectionUtils.isVoid;
+
 import org.mule.api.MessagingException;
 import org.mule.api.MuleContext;
 import org.mule.api.MuleEvent;
@@ -178,7 +179,8 @@ public final class OperationMessageProcessor implements MessageProcessor, MuleCo
     @Override
     public Optional<List<MetadataKey>> getMetadataKeys(MuleEvent event) throws MuleException
     {
-        if (operationModel.getMetaDataResolverFactory().isPresent()){
+        if (operationModel.getMetaDataResolverFactory().isPresent())
+        {
             return Optional.of(operationModel.getMetaDataResolverFactory().get().createResolver().getMetadataKeys(getMetadataContext(event)));
         }
         return Optional.empty();
@@ -187,7 +189,8 @@ public final class OperationMessageProcessor implements MessageProcessor, MuleCo
     @Override
     public Optional<MetadataType> getContentMetadata(MuleEvent event, MetadataKey key) throws MuleException
     {
-        if (operationModel.getMetaDataResolverFactory().isPresent()){
+        if (operationModel.getMetaDataResolverFactory().isPresent())
+        {
             return Optional.of(operationModel.getMetaDataResolverFactory().get().createResolver().getMetadata(getMetadataContext(event), key));
         }
 
@@ -204,7 +207,8 @@ public final class OperationMessageProcessor implements MessageProcessor, MuleCo
     @Override
     public Optional<MetadataType> getOutputMetadata(MuleEvent event, MetadataKey key) throws MuleException
     {
-        if (operationModel.getMetaDataResolverFactory().isPresent()){
+        if (operationModel.getMetaDataResolverFactory().isPresent())
+        {
             return Optional.of(operationModel.getMetaDataResolverFactory().get().createResolver().getOutputMetadata(getMetadataContext(event), key));
         }
 
