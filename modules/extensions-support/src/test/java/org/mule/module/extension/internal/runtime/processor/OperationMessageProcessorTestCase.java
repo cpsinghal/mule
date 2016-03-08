@@ -399,6 +399,9 @@ public class OperationMessageProcessorTestCase extends AbstractMuleContextTestCa
     @Test
     public void getMetadataKeys() throws Exception
     {
+        ParameterModel contentMock = mock(ParameterModel.class);
+        when(operationModel.getMetaDataKeyParameter()).thenReturn(Optional.of(contentMock));
+
         Optional<List<MetadataKey>> metadataKeys = messageProcessor.getMetadataKeys(event);
 
         verify(operationModel).getMetaDataResolverFactory();
