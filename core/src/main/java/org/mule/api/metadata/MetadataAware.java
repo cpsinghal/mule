@@ -18,8 +18,12 @@ public interface MetadataAware
 
     Optional<List<MetadataKey>> getMetadataKeys(MuleEvent event) throws MuleException;
 
-    Optional<MetadataType> getContentMetadata(MuleEvent event, MetadataKey key) throws MuleException;
+    Result<MetadataType> getContentMetadata(MuleEvent event, MetadataKey key) throws MuleException;
 
-    Optional<MetadataType> getOutputMetadata(MuleEvent event, MetadataKey key) throws MuleException;
+    Result<MetadataType> getOutputMetadata(MuleEvent event, MetadataKey key) throws MuleException;
+
+    Result<OperationMetadataDescriptor> getMetadata();
+
+    Result<OperationMetadataDescriptor> getMetadata(MuleEvent event, MetadataKey key);
 }
 

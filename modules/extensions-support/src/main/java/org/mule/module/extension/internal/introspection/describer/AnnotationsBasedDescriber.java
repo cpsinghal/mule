@@ -11,6 +11,7 @@ import static org.mule.metadata.java.utils.JavaTypeUtils.getType;
 import static org.mule.module.extension.internal.introspection.describer.MuleExtensionAnnotationParser.getExtension;
 import static org.mule.module.extension.internal.introspection.describer.MuleExtensionAnnotationParser.getMemberName;
 import static org.mule.module.extension.internal.introspection.describer.MuleExtensionAnnotationParser.parseDisplayAnnotations;
+import static org.mule.module.extension.internal.introspection.describer.MuleExtensionAnnotationParser.parseMetadataAnnotations;
 import static org.mule.module.extension.internal.util.IntrospectionUtils.getExposedFields;
 import static org.mule.module.extension.internal.util.IntrospectionUtils.getField;
 import static org.mule.module.extension.internal.util.IntrospectionUtils.getInterfaceGenerics;
@@ -37,10 +38,6 @@ import org.mule.extension.api.annotation.param.Connection;
 import org.mule.extension.api.annotation.param.Optional;
 import org.mule.extension.api.annotation.param.UseConfig;
 import org.mule.extension.api.annotation.param.display.Placement;
-import org.mule.extension.api.annotation.param.display.Password;
-import org.mule.extension.api.annotation.param.display.Text;
-import org.mule.extension.api.annotation.param.metadata.Content;
-import org.mule.extension.api.annotation.param.metadata.MetadataKeyParam;
 import org.mule.extension.api.exception.IllegalModelDefinitionException;
 import org.mule.extension.api.introspection.ExceptionEnricherFactory;
 import org.mule.extension.api.introspection.declaration.DescribingContext;
@@ -56,15 +53,9 @@ import org.mule.extension.api.introspection.declaration.fluent.SourceDescriptor;
 import org.mule.extension.api.introspection.declaration.fluent.WithParameters;
 import org.mule.extension.api.introspection.declaration.spi.Describer;
 import org.mule.extension.api.introspection.declaration.type.ExtensionsTypeLoaderFactory;
+import org.mule.extension.api.introspection.metadata.MetadataResolverFactory;
 import org.mule.extension.api.introspection.property.display.ImmutablePlacementModelProperty;
 import org.mule.extension.api.introspection.property.display.PlacementModelProperty;
-import org.mule.extension.api.introspection.metadata.MetadataResolverFactory;
-import org.mule.extension.api.introspection.property.ImmutableMetadataModelProperty;
-import org.mule.extension.api.introspection.property.ImmutablePasswordModelProperty;
-import org.mule.extension.api.introspection.property.ImmutableTextModelProperty;
-import org.mule.extension.api.introspection.property.MetadataModelProperty;
-import org.mule.extension.api.introspection.property.PasswordModelProperty;
-import org.mule.extension.api.introspection.property.TextModelProperty;
 import org.mule.extension.api.runtime.source.Source;
 import org.mule.metadata.api.ClassTypeLoader;
 import org.mule.module.extension.internal.exception.IllegalConfigurationModelDefinitionException;
@@ -502,6 +493,7 @@ public final class AnnotationsBasedDescriber implements Describer
                 parameter.describedAs(EMPTY).ofType(parsedParameter.getType());
                 addTypeRestrictions(parameter, parsedParameter);
                 parseDisplayAnnotations(parsedParameter, parameter);
+                parseMetadataAnnotations(parsedParameter, parameter);
             }
 
             Connection connectionAnnotation = parsedParameter.getAnnotation(Connection.class);
@@ -515,30 +507,6 @@ public final class AnnotationsBasedDescriber implements Describer
             {
                 operation.withModelProperty(ConfigTypeModelProperty.KEY, new ConfigTypeModelProperty(getType(parsedParameter.getType())));
             }
-        }
-    }
-
-    private void addModelPropertiesToParameter(ParsedParameter parsedParameter, ParameterDescriptor parameter)
-    {
-        Password passwordAnnotation = parsedParameter.getAnnotation(Password.class);
-        if (passwordAnnotation != null)
-        {
-            parameter.withModelProperty(PasswordModelProperty.KEY, new ImmutablePasswordModelProperty());
-        }
-        Text textAnnotation = parsedParameter.getAnnotation(Text.class);
-        if (textAnnotation != null)
-        {
-            parameter.withModelProperty(TextModelProperty.KEY, new ImmutableTextModelProperty());
-        }
-        Content contentAnnotation = parsedParameter.getAnnotation(Content.class);
-        if (contentAnnotation != null)
-        {
-            parameter.withModelProperty(MetadataModelProperty.IS_CONTENT_PARAM, new ImmutableMetadataModelProperty());
-        }
-        MetadataKeyParam keyParamAnnotation = parsedParameter.getAnnotation(MetadataKeyParam.class);
-        if (keyParamAnnotation != null)
-        {
-            parameter.withModelProperty(MetadataModelProperty.IS_KEY_PARAM, new ImmutableMetadataModelProperty());
         }
     }
 

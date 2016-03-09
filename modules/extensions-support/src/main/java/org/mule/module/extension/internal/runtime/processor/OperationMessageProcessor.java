@@ -21,6 +21,7 @@ import org.mule.api.lifecycle.InitialisationException;
 import org.mule.api.lifecycle.Lifecycle;
 import org.mule.api.metadata.MetadataAware;
 import org.mule.api.metadata.MetadataKey;
+import org.mule.api.metadata.OperationMetadataDescriptor;
 import org.mule.api.processor.MessageProcessor;
 import org.mule.extension.api.ExtensionManager;
 import org.mule.extension.api.introspection.OperationModel;
@@ -35,21 +36,19 @@ import org.mule.extension.api.runtime.ConfigurationInstance;
 import org.mule.extension.api.runtime.OperationContext;
 import org.mule.extension.api.runtime.OperationExecutor;
 import org.mule.internal.connection.ConnectionManagerAdapter;
-import org.mule.metadata.api.builder.BaseTypeBuilder;
-import org.mule.metadata.api.model.MetadataFormat;
 import org.mule.metadata.api.model.MetadataType;
-import org.mule.metadata.api.model.NullType;
 import org.mule.module.extension.internal.runtime.DefaultExecutionMediator;
 import org.mule.module.extension.internal.runtime.DefaultOperationContext;
 import org.mule.module.extension.internal.runtime.ExecutionMediator;
 import org.mule.module.extension.internal.runtime.OperationContextAdapter;
-import org.mule.module.extension.internal.runtime.exception.NullExceptionEnricher;
 import org.mule.module.extension.internal.runtime.metadata.DefaultMetadataContext;
+import org.mule.module.extension.internal.runtime.metadata.MetadataMediator;
 import org.mule.module.extension.internal.runtime.resolver.ResolverSet;
 import org.mule.util.StringUtils;
 
 import java.util.List;
 import java.util.Optional;
+
 import javax.inject.Inject;
 
 import org.slf4j.Logger;
@@ -87,6 +86,7 @@ public final class OperationMessageProcessor implements MessageProcessor, MuleCo
     private ReturnDelegate returnDelegate;
     private MuleContext muleContext;
     private OperationExecutor operationExecutor;
+    private MetadataMediator metadataMediator;
 
     @Inject
     private ConnectionManagerAdapter connectionManager;
@@ -104,6 +104,7 @@ public final class OperationMessageProcessor implements MessageProcessor, MuleCo
         this.resolverSet = resolverSet;
         this.extensionManager = extensionManager;
         this.target = target;
+        this.metadataMediator = new MetadataMediator(operationModel);
     }
 
     @Override
@@ -183,62 +184,39 @@ public final class OperationMessageProcessor implements MessageProcessor, MuleCo
     }
 
     @Override
-    public Optional<List<MetadataKey>> getMetadataKeys(MuleEvent event) throws MuleException
+    public Optional<List<MetadataKey>> getMetadataKeys(MuleEvent event)
     {
-
-        Optional<MetadataResolverFactory> resolverFactory = operationModel.getMetaDataResolverFactory();
-        if (resolverFactory.isPresent())
-        {
-            return Optional.of(resolverFactory.get().createResolver().getMetadataKeys(getMetadataContext(event)));
-        }
-        return Optional.empty();
+        return metadataMediator.getMetadataKeys(getMetadataContext(event));
     }
 
     @Override
-    public Optional<MetadataType> getContentMetadata(MuleEvent event, MetadataKey key) throws MuleException
+    public Optional<MetadataType> getContentMetadata(MuleEvent event, MetadataKey key)
     {
-        Optional<ParameterModel> contentParameter = operationModel.getContentParameter();
-        if (contentParameter.isPresent())
-        {
-            Optional<MetadataResolverFactory> resolverFactory = operationModel.getMetaDataResolverFactory();
-            if (resolverFactory.isPresent())
-            {
-                MetadataType dynamicMetadata = resolverFactory.get().createResolver().getContentMetadata(getMetadataContext(event), key);
-                if(!(dynamicMetadata instanceof NullType)){
-                    return Optional.of(dynamicMetadata);
-                }
-            }
-
-            //FIXME  metadatatype
-            //return Optional.of(contentParameter.get().getType());
-            MetadataType type = BaseTypeBuilder.create(new MetadataFormat(contentParameter.get().getType().getName(), contentParameter.get().getType().getName())).objectType().build();
-            return Optional.of(type);
-        }
-
-        return Optional.empty();
+        return metadataMediator.getContentMetadata(getMetadataContext(event), key);
     }
 
     @Override
-    public Optional<MetadataType> getOutputMetadata(MuleEvent event, MetadataKey key) throws MuleException
+    public Optional<MetadataType> getOutputMetadata(MuleEvent event, MetadataKey key)
     {
-        Optional<MetadataResolverFactory> resolverFactory = operationModel.getMetaDataResolverFactory();
-        if (resolverFactory.isPresent())
-        {
-            MetadataType outputMetadata = resolverFactory.get().createResolver().getOutputMetadata(getMetadataContext(event), key);
-            if(!(outputMetadata instanceof NullType)){
-                return Optional.of(outputMetadata);
-            }
-        }
-
-        //FIXME  metadatatype
-        //return Optional.of(operationModel.getReturnType());
-        MetadataType type = BaseTypeBuilder.create(new MetadataFormat(operationModel.getReturnType().getName(), operationModel.getReturnType().getName())).objectType().build();
-        return Optional.of(type);
+        return metadataMediator.getOutputMetadata(getMetadataContext(event), key);
     }
 
-    private MetadataContext getMetadataContext(MuleEvent event) throws MuleException
+    @Override
+    public OperationMetadataDescriptor getMetadata()
+    {
+        return metadataMediator.getMetadata();
+    }
+
+    @Override
+    public OperationMetadataDescriptor getMetadata(MuleEvent event, MetadataKey key)
+    {
+        return metadataMediator.getMetadata(getMetadataContext(event), key);
+    }
+
+    private MetadataContext getMetadataContext(MuleEvent event)
     {
         ConfigurationInstance<Object> configuration = getConfiguration(event);
         return new DefaultMetadataContext(configuration, connectionManager);
     }
+
 }

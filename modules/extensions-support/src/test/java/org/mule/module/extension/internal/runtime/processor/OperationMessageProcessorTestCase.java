@@ -60,7 +60,6 @@ import org.mule.tck.size.SmallTest;
 import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import org.junit.Before;
@@ -458,15 +457,15 @@ public class OperationMessageProcessorTestCase extends AbstractMuleContextTestCa
         when(nullKeyMock.getId()).thenReturn("");
 
         // TODO migrate to MetadataType
-        when(contentMock.getType()).thenReturn(org.mule.extension.api.introspection.DataType.of(Map.class));
+        MetadataType typeMock = mock(MetadataType.class);
+        when(typeMock.getDescription()).thenReturn(Optional.of("mockedType"));
+        when(contentMock.getType()).thenReturn(typeMock);
 
         Optional<MetadataType> contentMetadata = messageProcessor.getContentMetadata(event, nullKeyMock);
         verify(operationModel).getMetaDataResolverFactory();
         verify(metadataResolverFactory).createResolver();
 
         assertThat(contentMetadata.isPresent(), is(true));
-
-        assertThat(contentMetadata.get().getMetadataFormat().getId(), equalTo(Map.class.getName()));
     }
 
     @Test
@@ -491,7 +490,9 @@ public class OperationMessageProcessorTestCase extends AbstractMuleContextTestCa
         when(nullKeyMock.getId()).thenReturn("");
 
         // TODO migrate to MetadataType
-        when(operationModel.getReturnType()).thenReturn(org.mule.extension.api.introspection.DataType.of(Object.class));
+        MetadataType typeMock = mock(MetadataType.class);
+        when(typeMock.getDescription()).thenReturn(Optional.of("mockedType"));
+        when(operationModel.getReturnType()).thenReturn(typeMock);
 
         Optional<MetadataType> outputMetadata = messageProcessor.getOutputMetadata(event, nullKeyMock);
 
@@ -499,7 +500,7 @@ public class OperationMessageProcessorTestCase extends AbstractMuleContextTestCa
         verify(metadataResolverFactory).createResolver();
 
         assertThat(outputMetadata.isPresent(), is(true));
-        assertThat(outputMetadata.get().getMetadataFormat().getId(), equalTo(Object.class.getName()));
+        assertThat(outputMetadata.get().getDescription(), is(typeMock.getDescription()));
     }
 
 

@@ -21,9 +21,13 @@ import org.mule.extension.api.annotation.param.UseConfig;
 import org.mule.extension.api.annotation.param.display.Password;
 import org.mule.extension.api.annotation.param.display.Placement;
 import org.mule.extension.api.annotation.param.display.Text;
+import org.mule.extension.api.annotation.param.metadata.Content;
+import org.mule.extension.api.annotation.param.metadata.MetadataKeyParam;
 import org.mule.extension.api.introspection.EnrichableModel;
 import org.mule.extension.api.introspection.declaration.fluent.BaseDeclaration;
 import org.mule.extension.api.introspection.declaration.fluent.HasModelProperties;
+import org.mule.extension.api.introspection.declaration.fluent.ParameterDescriptor;
+import org.mule.extension.api.introspection.property.MetadataModelProperty;
 import org.mule.extension.api.introspection.property.display.ImmutablePasswordModelProperty;
 import org.mule.extension.api.introspection.property.display.ImmutablePlacementModelProperty;
 import org.mule.extension.api.introspection.property.display.ImmutableTextModelProperty;
@@ -229,6 +233,20 @@ public final class MuleExtensionAnnotationParser
         if (placementAnnotation != null)
         {
             parameter.withModelProperty(PlacementModelProperty.KEY, new ImmutablePlacementModelProperty(placementAnnotation.order(), placementAnnotation.group(), placementAnnotation.tab()));
+        }
+    }
+
+    public static void parseMetadataAnnotations(AnnotatedElement parsedParameter, ParameterDescriptor parameter)
+    {
+        Content contentAnnotation = parsedParameter.getAnnotation(Content.class);
+        if (contentAnnotation != null)
+        {
+            parameter.withModelProperty(MetadataModelProperty.IS_CONTENT_PARAM, Boolean.TRUE);
+        }
+        MetadataKeyParam keyParamAnnotation = parsedParameter.getAnnotation(MetadataKeyParam.class);
+        if (keyParamAnnotation != null)
+        {
+            parameter.withModelProperty(MetadataModelProperty.IS_KEY_PARAM, Boolean.TRUE);
         }
     }
 
