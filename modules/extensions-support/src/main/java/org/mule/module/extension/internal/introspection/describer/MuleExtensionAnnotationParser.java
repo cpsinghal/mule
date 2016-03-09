@@ -18,22 +18,19 @@ import org.mule.extension.api.annotation.RestrictedTo;
 import org.mule.extension.api.annotation.param.Connection;
 import org.mule.extension.api.annotation.param.Optional;
 import org.mule.extension.api.annotation.param.UseConfig;
+import org.mule.extension.api.annotation.param.display.DisplayName;
 import org.mule.extension.api.annotation.param.display.Password;
 import org.mule.extension.api.annotation.param.display.Placement;
 import org.mule.extension.api.annotation.param.display.Text;
 import org.mule.extension.api.introspection.EnrichableModel;
 import org.mule.extension.api.introspection.declaration.fluent.BaseDeclaration;
-import org.mule.extension.api.introspection.declaration.fluent.HasModelProperties;
-import org.mule.extension.api.introspection.property.display.ImmutablePasswordModelProperty;
-import org.mule.extension.api.introspection.property.display.ImmutablePlacementModelProperty;
-import org.mule.extension.api.introspection.property.display.ImmutableTextModelProperty;
-import org.mule.extension.api.introspection.property.display.PasswordModelProperty;
-import org.mule.extension.api.introspection.property.display.PlacementModelProperty;
-import org.mule.extension.api.introspection.property.display.TextModelProperty;
+import org.mule.extension.api.introspection.declaration.fluent.ParameterDescriptor;
+import org.mule.extension.api.introspection.property.display.DisplayModelProperty;
 import org.mule.metadata.api.ClassTypeLoader;
 import org.mule.metadata.api.model.MetadataType;
 import org.mule.metadata.java.utils.JavaTypeUtils;
 import org.mule.module.extension.internal.model.property.DeclaringMemberModelProperty;
+import org.mule.module.extension.internal.model.property.display.DisplayModelPropertyBuilder;
 import org.mule.module.extension.internal.util.IntrospectionUtils;
 import org.mule.util.ClassUtils;
 import org.mule.util.CollectionUtils;
@@ -213,23 +210,47 @@ public final class MuleExtensionAnnotationParser
         return map;
     }
 
-    public static void parseDisplayAnnotations(AnnotatedElement annotatedElement, HasModelProperties parameter)
+    private static void parseDisplayAnnotations(AnnotatedElement annotatedElement, DisplayModelPropertyBuilder builder)
     {
         Password passwordAnnotation = annotatedElement.getAnnotation(Password.class);
         if (passwordAnnotation != null)
         {
-            parameter.withModelProperty(PasswordModelProperty.KEY, new ImmutablePasswordModelProperty());
+            builder.withPassword(true);
         }
         Text textAnnotation = annotatedElement.getAnnotation(Text.class);
         if (textAnnotation != null)
         {
-            parameter.withModelProperty(TextModelProperty.KEY, new ImmutableTextModelProperty());
+            builder.withText(true);
         }
+    }
+
+    public static void parsePlacementAnnotation(AnnotatedElement annotatedElement, DisplayModelPropertyBuilder builder)
+    {
         Placement placementAnnotation = annotatedElement.getAnnotation(Placement.class);
         if (placementAnnotation != null)
         {
-            parameter.withModelProperty(PlacementModelProperty.KEY, new ImmutablePlacementModelProperty(placementAnnotation.order(), placementAnnotation.group(), placementAnnotation.tab()));
+            builder.order(placementAnnotation.order()).groupName(placementAnnotation.group()).tabName(placementAnnotation.tab());
         }
+    }
+
+    public static void parseDisplayNameAnnotation(AnnotatedElement annotatedElement, String fieldName, DisplayModelPropertyBuilder builder)
+    {
+        DisplayName displayNameAnnotation = annotatedElement.getAnnotation(DisplayName.class);
+        String displayName = (displayNameAnnotation != null) ? displayNameAnnotation.value() : StringUtils.join(StringUtils.splitByCharacterTypeCamelCase(StringUtils.capitalize(fieldName)), ' ');
+        builder.displayName(displayName);
+    }
+
+    public static void parseDisplayAnnotations(AnnotatedElement annotatedElement, String name, ParameterDescriptor parameter)
+    {
+        parseDisplayAnnotations(annotatedElement, name, parameter, DisplayModelPropertyBuilder.create());
+    }
+
+    public static void parseDisplayAnnotations(AnnotatedElement annotatedElement, String name, ParameterDescriptor parameter, DisplayModelPropertyBuilder builder)
+    {
+        parseDisplayAnnotations(annotatedElement, builder);
+        parsePlacementAnnotation(annotatedElement, builder);
+        parseDisplayNameAnnotation(annotatedElement, name, builder);
+        parameter.withModelProperty(DisplayModelProperty.KEY, builder.build());
     }
 
 }

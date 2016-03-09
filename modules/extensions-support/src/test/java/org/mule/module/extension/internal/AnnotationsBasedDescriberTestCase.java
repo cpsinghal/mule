@@ -58,7 +58,7 @@ import org.mule.extension.api.introspection.declaration.fluent.Descriptor;
 import org.mule.extension.api.introspection.declaration.fluent.OperationDeclaration;
 import org.mule.extension.api.introspection.declaration.fluent.ParameterDeclaration;
 import org.mule.extension.api.introspection.declaration.fluent.SourceDeclaration;
-import org.mule.extension.api.introspection.property.display.PlacementModelProperty;
+import org.mule.extension.api.introspection.property.display.DisplayModelProperty;
 import org.mule.metadata.api.model.MetadataType;
 import org.mule.metadata.java.annotation.GenericTypesAnnotation;
 import org.mule.module.extension.HeisenbergConnection;
@@ -126,7 +126,22 @@ public class AnnotationsBasedDescriberTestCase extends AbstractAnnotationsBasedD
     private static final String CURE_CANCER = "cureCancer";
     private static final String GET_SAUL_PHONE = "getSaulPhone";
     private static final String IGNORED_OPERATION = "ignoredOperation";
+
+    private static final String OPERATION_WITH_DISPLAY_NAME_PARAMETER = HeisenbergOperations.OPERATION_WITH_DISPLAY_NAME_PARAMETER;
+    private static final String OPERATION_PARAMETER_OVERRIDED_DISPLAY_NAME = HeisenbergOperations.OPERATION_PARAMETER_OVERRIDED_DISPLAY_NAME;
+    private static final String OPERATION_PARAMETER_ORIGINAL_OVERRIDED_DISPLAY_NAME = HeisenbergOperations.OPERATION_PARAMETER_ORIGINAL_OVERRIDED_DISPLAY_NAME;
+    private static final String OPERATION_PARAMETER_GENERATED_DISPLAY_NAME = HeisenbergOperations.OPERATION_PARAMETER_GENERATED_DISPLAY_NAME;
+    private static final String OPERATION_PARAMETER_ORIGINAL_GENERATED_DISPLAY_NAME = HeisenbergOperations.OPERATION_PARAMETER_ORIGINAL_GENERATED_DISPLAY_NAME;
+
+    private static final String PARAMETER_ORIGINAL_OVERRIDED_DISPLAY_NAME = HeisenbergExtension.PARAMETER_ORIGINAL_OVERRIDED_DISPLAY_NAME;
+    private static final String PARAMETER_OVERRIDED_DISPLAY_NAME = HeisenbergExtension.PARAMETER_OVERRIDED_DISPLAY_NAME;
+    private static final String PARAMETER_ORIGINAL_GENERATED_DISPLAY_NAME = HeisenbergExtension.PARAMETER_ORIGINAL_GENERATED_DISPLAY_NAME;
+    private static final String PARAMETER_GENERATED_DISPLAY_NAME = HeisenbergExtension.PARAMETER_GENERATED_DISPLAY_NAME;
+
+
     private static final String EXTENSION_VERSION = MuleManifest.getProductVersion();
+    private static final String PARAMETER_GROUP_DISPLAY_NAME = "Date of decease";
+    private static final String PARAMETER_GROUP_ORIGINAL_DISPLAY_NAME = "dateOfDeath";
 
     @Before
     public void setUp()
@@ -159,6 +174,11 @@ public class AnnotationsBasedDescriberTestCase extends AbstractAnnotationsBasedD
         assertParameterPlacement(findParameter(parameters, "labeledRicin"), RICIN_GROUP_NAME, 1);
         assertParameterPlacement(findParameter(parameters, "ricinPacks"), RICIN_GROUP_NAME, 2);
 
+
+        assertParameterPlacement(findParameter(parameters, "ricinPacks"), RICIN_GROUP_NAME, 2);
+        assertParameterDisplayName(findParameter(parameters, PARAMETER_ORIGINAL_OVERRIDED_DISPLAY_NAME), PARAMETER_OVERRIDED_DISPLAY_NAME);
+        assertParameterDisplayName(findParameter(parameters, PARAMETER_ORIGINAL_GENERATED_DISPLAY_NAME), PARAMETER_GENERATED_DISPLAY_NAME);
+
     }
 
     @Test
@@ -172,6 +192,33 @@ public class AnnotationsBasedDescriberTestCase extends AbstractAnnotationsBasedD
         assertParameterPlacement(findParameter(parameters, "dateOfDeath"), PERSONAL_INFORMATION_GROUP_NAME, null);
         assertParameterPlacement(findParameter(parameters, "age"), PERSONAL_INFORMATION_GROUP_NAME, null);
         assertParameterPlacement(findParameter(parameters, "myName"), PERSONAL_INFORMATION_GROUP_NAME, null);
+
+    }
+
+    @Test
+    public void parseDisplayNameAnnotationOnParameterGroup()
+    {
+        Descriptor descriptor = getDescriber().describe(new DefaultDescribingContext());
+        Declaration declaration = descriptor.getRootDeclaration().getDeclaration();
+        List<ParameterDeclaration> parameters = declaration.getConfigurations().get(0).getParameters();
+
+        assertParameterDisplayName(findParameter(parameters, PARAMETER_GROUP_ORIGINAL_DISPLAY_NAME), PARAMETER_GROUP_DISPLAY_NAME);
+
+    }
+
+
+    @Test
+    public void parseDisplayNameAnnotationOnOperationParameter()
+    {
+        Descriptor descriptor = getDescriber().describe(new DefaultDescribingContext());
+        Declaration declaration = descriptor.getRootDeclaration().getDeclaration();
+        OperationDeclaration operation = getOperation(declaration, OPERATION_WITH_DISPLAY_NAME_PARAMETER);
+
+        assertThat(operation, is(notNullValue()));
+        List<ParameterDeclaration> parameters = operation.getParameters();
+
+        assertParameterDisplayName(findParameter(parameters, OPERATION_PARAMETER_ORIGINAL_GENERATED_DISPLAY_NAME), OPERATION_PARAMETER_GENERATED_DISPLAY_NAME);
+        assertParameterDisplayName(findParameter(parameters, OPERATION_PARAMETER_ORIGINAL_OVERRIDED_DISPLAY_NAME), OPERATION_PARAMETER_OVERRIDED_DISPLAY_NAME);
     }
 
     @Test
@@ -208,7 +255,7 @@ public class AnnotationsBasedDescriberTestCase extends AbstractAnnotationsBasedD
         ConfigurationDeclaration configuration = declaration.getConfigurations().get(1);
         assertThat(configuration, is(notNullValue()));
         assertThat(configuration.getName(), equalTo(EXTENDED_CONFIG_NAME));
-        assertThat(configuration.getParameters(), hasSize(26));
+        assertThat(configuration.getParameters(), hasSize(28));
         assertParameter(configuration.getParameters(), "extendedProperty", "", toMetadataType(String.class), true, SUPPORTED, null);
     }
 
@@ -249,7 +296,7 @@ public class AnnotationsBasedDescriberTestCase extends AbstractAnnotationsBasedD
         assertThat(conf.getName(), equalTo(DEFAULT_CONFIG_NAME));
 
         List<ParameterDeclaration> parameters = conf.getParameters();
-        assertThat(parameters, hasSize(25));
+        assertThat(parameters, hasSize(27));
 
         assertParameter(parameters, "myName", "", toMetadataType(String.class), false, SUPPORTED, HEISENBERG);
         assertParameter(parameters, "age", "", toMetadataType(Integer.class), false, SUPPORTED, AGE);
@@ -319,7 +366,7 @@ public class AnnotationsBasedDescriberTestCase extends AbstractAnnotationsBasedD
 
     private void assertTestModuleOperations(Declaration declaration) throws Exception
     {
-        assertThat(declaration.getOperations(), hasSize(22));
+        assertThat(declaration.getOperations(), hasSize(23));
         assertOperation(declaration, SAY_MY_NAME_OPERATION, "");
         assertOperation(declaration, GET_ENEMY_OPERATION, "");
         assertOperation(declaration, KILL_OPERATION, "");
@@ -483,15 +530,22 @@ public class AnnotationsBasedDescriberTestCase extends AbstractAnnotationsBasedD
 
     private void assertParameterPlacement(ParameterDeclaration param, String groupName, Integer order)
     {
-        PlacementModelProperty placement = param.getModelProperty(PlacementModelProperty.KEY);
+        DisplayModelProperty display = param.getModelProperty(DisplayModelProperty.KEY);
+
         if (groupName != null)
         {
-            assertThat(placement.getGroupName(), is(groupName));
+            assertThat(display.getGroupName(), is(groupName));
         }
         if (order != null)
         {
-            assertThat(placement.getOrder(), is(order));
+            assertThat(display.getOrder(), is(order));
         }
+    }
+
+    private void assertParameterDisplayName(ParameterDeclaration param, String displayName)
+    {
+        DisplayModelProperty display = param.getModelProperty(DisplayModelProperty.KEY);
+        assertThat(display.getDisplayName(), is(displayName));
     }
 
     private ParameterDeclaration findParameter(List<ParameterDeclaration> parameters, final String name)

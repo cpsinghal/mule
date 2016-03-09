@@ -71,7 +71,7 @@ final class DefaultFieldDescriber implements FieldDescriber
         parameterDescriptor.ofType(dataType);
         parameterDescriptor.withExpressionSupport(IntrospectionUtils.getExpressionSupport(field));
         parameterDescriptor.withModelProperty(DeclaringMemberModelProperty.KEY, new DeclaringMemberModelProperty(field));
-        parseDisplayAnnotations(field, parameterDescriptor);
+        parseDisplayAnnotations(field, field.getName(), parameterDescriptor);
 
         return parameterDescriptor;
     }
