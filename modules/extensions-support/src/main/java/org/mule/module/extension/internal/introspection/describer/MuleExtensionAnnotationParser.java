@@ -27,6 +27,7 @@ import org.mule.extension.api.introspection.EnrichableModel;
 import org.mule.extension.api.introspection.declaration.fluent.BaseDeclaration;
 import org.mule.extension.api.introspection.declaration.fluent.HasModelProperties;
 import org.mule.extension.api.introspection.declaration.fluent.ParameterDescriptor;
+import org.mule.extension.api.introspection.property.ImmutableMetadataModelProperty;
 import org.mule.extension.api.introspection.property.MetadataModelProperty;
 import org.mule.extension.api.introspection.property.display.ImmutablePasswordModelProperty;
 import org.mule.extension.api.introspection.property.display.ImmutablePlacementModelProperty;
@@ -238,15 +239,13 @@ public final class MuleExtensionAnnotationParser
 
     public static void parseMetadataAnnotations(AnnotatedElement parsedParameter, ParameterDescriptor parameter)
     {
-        Content contentAnnotation = parsedParameter.getAnnotation(Content.class);
-        if (contentAnnotation != null)
+        if (parsedParameter.getAnnotation(Content.class) != null)
         {
-            parameter.withModelProperty(MetadataModelProperty.IS_CONTENT_PARAM, Boolean.TRUE);
+            parameter.withModelProperty(MetadataModelProperty.KEY, new ImmutableMetadataModelProperty(false, true));
         }
-        MetadataKeyParam keyParamAnnotation = parsedParameter.getAnnotation(MetadataKeyParam.class);
-        if (keyParamAnnotation != null)
+        else if (parsedParameter.getAnnotation(MetadataKeyParam.class) != null)
         {
-            parameter.withModelProperty(MetadataModelProperty.IS_KEY_PARAM, Boolean.TRUE);
+            parameter.withModelProperty(MetadataModelProperty.KEY, new ImmutableMetadataModelProperty(true, false));
         }
     }
 

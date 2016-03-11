@@ -31,7 +31,9 @@ import org.mule.api.lifecycle.Lifecycle;
 import org.mule.api.lifecycle.Startable;
 import org.mule.api.lifecycle.Stoppable;
 import org.mule.api.metadata.DataType;
+import org.mule.api.metadata.FailureType;
 import org.mule.api.metadata.MetadataKey;
+import org.mule.api.metadata.Result;
 import org.mule.api.temporary.MuleMessage;
 import org.mule.extension.api.ExtensionManager;
 import org.mule.extension.api.introspection.ExceptionEnricherFactory;
@@ -123,6 +125,12 @@ public class OperationMessageProcessorTestCase extends AbstractMuleContextTestCa
     private MetadataResolverFactory metadataResolverFactory;
 
     @Mock
+    private Result successResult;
+
+    @Mock
+    private Result failureResult;
+
+    @Mock
     private ConnectionProviderWrapper connectionProviderWrapper;
 
     private OperationMessageProcessor messageProcessor;
@@ -143,7 +151,13 @@ public class OperationMessageProcessorTestCase extends AbstractMuleContextTestCa
         when(exceptionEnricherFactory.createEnricher()).thenReturn(new NullExceptionEnricher());
 
         when(operationModel.getMetaDataResolverFactory()).thenReturn(Optional.of(metadataResolverFactory));
-        when(metadataResolverFactory.createResolver()).thenReturn(new NoConfigMetadataResolver());
+        when(metadataResolverFactory.getResolver()).thenReturn(new NoConfigMetadataResolver());
+
+        when(successResult.isSucess()).thenReturn(true);
+        when(successResult.getFailureType()).thenReturn(FailureType.NONE);
+
+        when(failureResult.isSucess()).thenReturn(false);
+        when(failureResult.getFailureType()).thenReturn(FailureType.UNKNOWN);
 
         when(resolverSet.resolve(event)).thenReturn(parameters);
 
@@ -401,12 +415,12 @@ public class OperationMessageProcessorTestCase extends AbstractMuleContextTestCa
         ParameterModel contentMock = mock(ParameterModel.class);
         when(operationModel.getMetaDataKeyParameter()).thenReturn(Optional.of(contentMock));
 
-        Optional<List<MetadataKey>> metadataKeys = messageProcessor.getMetadataKeys(event);
+        Result<List<MetadataKey>> metadataKeys = messageProcessor.getMetadataKeys(event);
 
         verify(operationModel).getMetaDataResolverFactory();
-        verify(metadataResolverFactory).createResolver();
+        verify(metadataResolverFactory).getResolver();
 
-        assertThat(metadataKeys.isPresent(), is(true));
+        assertThat(metadataKeys.isSucess(), is(true));
         assertThat(metadataKeys.get().size(), is(2));
 
         assertThat(metadataKeys.get().get(0).getId(), equalTo(NoConfigMetadataResolver.KeyIds.BOOLEAN.name()));
@@ -422,12 +436,12 @@ public class OperationMessageProcessorTestCase extends AbstractMuleContextTestCa
         MetadataKey keyMock = mock(MetadataKey.class);
         when(keyMock.getId()).thenReturn(NoConfigMetadataResolver.KeyIds.STRING.name());
 
-        Optional<MetadataType> contentMetadata = messageProcessor.getContentMetadata(event, keyMock);
+        Result<MetadataType> contentMetadata = messageProcessor.getContentMetadata(event, keyMock);
 
         verify(operationModel).getMetaDataResolverFactory();
-        verify(metadataResolverFactory).createResolver();
+        verify(metadataResolverFactory).getResolver();
 
-        assertThat(contentMetadata.isPresent(), is(true));
+        assertThat(contentMetadata.isSucess(), is(true));
 
         assertThat(contentMetadata.get().getMetadataFormat().getId(), equalTo(StringType.class.getSimpleName()));
     }
@@ -438,12 +452,12 @@ public class OperationMessageProcessorTestCase extends AbstractMuleContextTestCa
         MetadataKey keyMock = mock(MetadataKey.class);
         when(keyMock.getId()).thenReturn(NoConfigMetadataResolver.KeyIds.BOOLEAN.name());
 
-        Optional<MetadataType> outputMetadata = messageProcessor.getOutputMetadata(event, keyMock);
+        Result<MetadataType> outputMetadata = messageProcessor.getOutputMetadata(event, keyMock);
 
         verify(operationModel).getMetaDataResolverFactory();
-        verify(metadataResolverFactory).createResolver();
+        verify(metadataResolverFactory).getResolver();
 
-        assertThat(outputMetadata.isPresent(), is(true));
+        assertThat(outputMetadata.isSucess(), is(true));
         assertThat(outputMetadata.get().getMetadataFormat().getId(), equalTo(NoConfigMetadataResolver.BOOLEAN_TYPE_RESULT_ID));
     }
 
@@ -456,16 +470,15 @@ public class OperationMessageProcessorTestCase extends AbstractMuleContextTestCa
         MetadataKey nullKeyMock = mock(MetadataKey.class);
         when(nullKeyMock.getId()).thenReturn("");
 
-        // TODO migrate to MetadataType
         MetadataType typeMock = mock(MetadataType.class);
         when(typeMock.getDescription()).thenReturn(Optional.of("mockedType"));
         when(contentMock.getType()).thenReturn(typeMock);
 
-        Optional<MetadataType> contentMetadata = messageProcessor.getContentMetadata(event, nullKeyMock);
+        Result<MetadataType> contentMetadata = messageProcessor.getContentMetadata(event, nullKeyMock);
         verify(operationModel).getMetaDataResolverFactory();
-        verify(metadataResolverFactory).createResolver();
+        verify(metadataResolverFactory).getResolver();
 
-        assertThat(contentMetadata.isPresent(), is(true));
+        assertThat(contentMetadata.isSucess(), is(true));
     }
 
     @Test
@@ -476,11 +489,12 @@ public class OperationMessageProcessorTestCase extends AbstractMuleContextTestCa
         MetadataKey nullKeyMock = mock(MetadataKey.class);
         when(nullKeyMock.getId()).thenReturn("");
 
-        Optional<MetadataType> contentMetadata = messageProcessor.getContentMetadata(event, nullKeyMock);
+        Result<MetadataType> contentMetadata = messageProcessor.getContentMetadata(event, nullKeyMock);
         verify(operationModel, never()).getMetaDataResolverFactory();
-        verify(metadataResolverFactory, never()).createResolver();
+        verify(metadataResolverFactory, never()).getResolver();
 
-        assertThat(contentMetadata.isPresent(), is(false));
+        assertThat(contentMetadata.isSucess(), is(false));
+        assertThat(contentMetadata.getFailureType(), is(FailureType.NO_DYNAMIC_TYPE_AVAILABLE));
     }
 
     @Test
@@ -494,12 +508,12 @@ public class OperationMessageProcessorTestCase extends AbstractMuleContextTestCa
         when(typeMock.getDescription()).thenReturn(Optional.of("mockedType"));
         when(operationModel.getReturnType()).thenReturn(typeMock);
 
-        Optional<MetadataType> outputMetadata = messageProcessor.getOutputMetadata(event, nullKeyMock);
+        Result<MetadataType> outputMetadata = messageProcessor.getOutputMetadata(event, nullKeyMock);
 
         verify(operationModel).getMetaDataResolverFactory();
-        verify(metadataResolverFactory).createResolver();
+        verify(metadataResolverFactory).getResolver();
 
-        assertThat(outputMetadata.isPresent(), is(true));
+        assertThat(outputMetadata.isSucess(), is(true));
         assertThat(outputMetadata.get().getDescription(), is(typeMock.getDescription()));
     }
 

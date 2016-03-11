@@ -15,10 +15,12 @@ import org.mule.api.MuleContext;
 import org.mule.api.MuleEvent;
 import org.mule.api.MuleException;
 import org.mule.api.construct.FlowConstruct;
+import org.mule.api.metadata.FailureType;
 import org.mule.api.metadata.MetadataAware;
 import org.mule.api.metadata.MetadataKey;
 import org.mule.api.metadata.MuleMetadataManager;
 import org.mule.api.metadata.ProcessorId;
+import org.mule.api.metadata.Result;
 import org.mule.api.processor.MessageProcessor;
 import org.mule.api.registry.MuleRegistry;
 import org.mule.construct.Flow;
@@ -27,7 +29,6 @@ import org.mule.tck.size.SmallTest;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -58,6 +59,12 @@ public class MetadataManagerTestCase
     @Mock(extraInterfaces = MessageProcessor.class)
     private MetadataAware messageProcessor;
 
+    @Mock
+    private Result successResult;
+
+    @Mock
+    private Result failureResult;
+
     private MuleMetadataManager metadataManager;
 
     @Before
@@ -67,58 +74,70 @@ public class MetadataManagerTestCase
         when(muleRegistry.lookupFlowConstruct(FLOW_NAME)).thenReturn(flow);
         when(flow.getMessageProcessors()).thenReturn(Arrays.<MessageProcessor>asList((MessageProcessor)messageProcessor));
 
+        when(successResult.isSucess()).thenReturn(true);
+        when(successResult.getFailureType()).thenReturn(FailureType.NONE);
+
+        when(failureResult.isSucess()).thenReturn(false);
+        when(failureResult.getFailureType()).thenReturn(FailureType.UNKNOWN);
+
         metadataManager = new MuleMetadataManager();
         metadataManager.setMuleContext(muleContext);
     }
 
     @Test
-    public void getMetadataKeys() throws MuleException
+    public void getMetadataKeys() throws Exception
     {
-        when(messageProcessor.getMetadataKeys(event)).thenReturn(Optional.of(Arrays.asList(mock(MetadataKey.class))));
+        when(successResult.get()).thenReturn(Arrays.asList(mock(MetadataKey.class)));
+
+        when(messageProcessor.getMetadataKeys(event)).thenReturn(successResult);
 
         MuleMetadataManager metadataManager = new MuleMetadataManager();
         metadataManager.setMuleContext(muleContext);
 
-        Optional<List<MetadataKey>> keys = metadataManager.getMetadataKeys(event, new ProcessorId(FLOW_NAME, PROCESSOR_INDEX));
+        Result<List<MetadataKey>> keys = metadataManager.getMetadataKeys(event, new ProcessorId(FLOW_NAME, PROCESSOR_INDEX));
 
         verifyFoundMessageProcessor();
         verify(messageProcessor).getMetadataKeys(event);
-        assertThat(keys.isPresent(), is(true));
+        assertThat(keys.isSucess(), is(true));
         assertThat(keys.get().size(), is(1));
     }
 
     @Test
-    public void getContentMetadata() throws MuleException
+    public void getContentMetadata() throws Exception
     {
         MetadataKey keyMock = mock(MetadataKey.class);
         MetadataType typeMock = mock(MetadataType.class);
 
-        when(messageProcessor.getContentMetadata(event, keyMock)).thenReturn(Optional.of(typeMock));
-        Optional<MetadataType> type = metadataManager.getContentMetadata(event, processorId, keyMock);
+        when(successResult.get()).thenReturn(typeMock);
+
+        when(messageProcessor.getContentMetadata(event, keyMock)).thenReturn(successResult);
+        Result<MetadataType> type = metadataManager.getContentMetadata(event, processorId, keyMock);
 
         verifyFoundMessageProcessor();
         verify(messageProcessor).getContentMetadata(event, keyMock);
-        assertThat(type.isPresent(), is(true));
+        assertThat(type.isSucess(), is(true));
         assertThat(type.get(), is(typeMock));
     }
 
     @Test
-    public void getOutputMetadata() throws MuleException
+    public void getOutputMetadata() throws Exception
     {
         MetadataKey keyMock = mock(MetadataKey.class);
         MetadataType typeMock = mock(MetadataType.class);
 
-        when(messageProcessor.getOutputMetadata(event, keyMock)).thenReturn(Optional.of(typeMock));
-        Optional<MetadataType> type = metadataManager.getOutputMetadata(event, processorId, keyMock);
+        when(successResult.get()).thenReturn(typeMock);
+
+        when(messageProcessor.getOutputMetadata(event, keyMock)).thenReturn(successResult);
+        Result<MetadataType> type = metadataManager.getOutputMetadata(event, processorId, keyMock);
 
         verifyFoundMessageProcessor();
         verify(messageProcessor).getOutputMetadata(event, keyMock);
-        assertThat(type.isPresent(), is(true));
+        assertThat(type.isSucess(), is(true));
         assertThat(type.get(), is(typeMock));
     }
 
     @Test
-    public void flowIsNotMetadataAware() throws MuleException
+    public void flowIsNotMetadataAware() throws Exception
     {
         MessageProcessor staticMessageProcessor = mock(MessageProcessor.class);
         when(flow.getMessageProcessors()).thenReturn(Arrays.<MessageProcessor>asList(staticMessageProcessor));
@@ -128,13 +147,15 @@ public class MetadataManagerTestCase
         MuleMetadataManager metadataManager = new MuleMetadataManager();
         metadataManager.setMuleContext(muleContext);
 
-        Optional<List<MetadataKey>> keys = metadataManager.getMetadataKeys(event, processorId);
-        Optional<MetadataType> contentType = metadataManager.getContentMetadata(event, processorId, keyMock);
-        Optional<MetadataType> outputType = metadataManager.getOutputMetadata(event, processorId, keyMock);
+        Result<List<MetadataKey>> keys = metadataManager.getMetadataKeys(event, processorId);
+        Result<MetadataType> contentType = metadataManager.getContentMetadata(event, processorId, keyMock);
+        Result<MetadataType> outputType = metadataManager.getOutputMetadata(event, processorId, keyMock);
 
-        assertThat(keys.isPresent(), is(false));
-        assertThat(contentType.isPresent(), is(false));
-        assertThat(outputType.isPresent(), is(false));
+        assertThat(keys.isSucess(), is(false));
+        assertThat(contentType.isSucess(), is(false));
+        assertThat(outputType.isSucess(), is(false));
+
+        assertThat(outputType.getFailureType(), is(FailureType.RESOURCE_UNAVAILABLE));
     }
 
     private void verifyFoundMessageProcessor() throws MuleException

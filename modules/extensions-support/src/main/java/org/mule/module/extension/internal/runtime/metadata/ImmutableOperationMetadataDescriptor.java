@@ -10,32 +10,36 @@ import org.mule.api.metadata.OperationMetadataDescriptor;
 import org.mule.api.metadata.ParameterMetadataDescriptor;
 
 import java.util.List;
-import java.util.Optional;
 
 public final class ImmutableOperationMetadataDescriptor implements OperationMetadataDescriptor
 {
     private final String name;
+    private final List<ParameterMetadataDescriptor> parameters;
+    private final ParameterMetadataDescriptor outputParameter;
 
-    public ImmutableOperationMetadataDescriptor(String name)
+    public ImmutableOperationMetadataDescriptor(String name, List<ParameterMetadataDescriptor> parameters,
+                                                ParameterMetadataDescriptor outputParameter)
     {
         this.name = name;
+        this.parameters = parameters;
+        this.outputParameter = outputParameter;
     }
 
     @Override
     public String getName()
     {
-        return null;
+        return name;
     }
 
     @Override
     public List<ParameterMetadataDescriptor> getParametersMetadata()
     {
-        return null;
+        return this.parameters;
     }
 
     @Override
-    public Optional<ParameterMetadataDescriptor> getOutputMetadata()
+    public ParameterMetadataDescriptor getOutputMetadata()
     {
-        return null;
+        return this.outputParameter;
     }
 }

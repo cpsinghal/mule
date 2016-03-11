@@ -28,6 +28,7 @@ import org.mule.api.metadata.MetadataKey;
 import org.mule.api.metadata.MetadataManager;
 import org.mule.api.metadata.MuleMetadataManager;
 import org.mule.api.metadata.ProcessorId;
+import org.mule.api.metadata.Result;
 import org.mule.extension.api.ExtensionManager;
 import org.mule.functional.junit4.ExtensionFunctionalTestCase;
 import org.mule.functional.junit4.FlowRunner;
@@ -41,7 +42,6 @@ import org.mule.module.extension.model.Weapon;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.hamcrest.Matchers;
@@ -117,9 +117,9 @@ public class OperationExecutionTestCase extends ExtensionFunctionalTestCase
     {
         MuleEvent testEvent = getTestEvent(getTestMuleMessage("#[['s01':['emilio', 'domingo'], 's02':['tuco', 'tortuga']]]"));
         MetadataManager metadataManager = muleContext.getRegistry().lookupObject(MuleMetadataManager.MANAGER_REGISTRY_ID);
-        Optional<List<MetadataKey>> dynamicContentWithKey = metadataManager.getMetadataKeys(testEvent, new ProcessorId("dynamicContentWithKey", 0));
+        Result<List<MetadataKey>> dynamicContentWithKey = metadataManager.getMetadataKeys(testEvent, new ProcessorId("dynamicContentWithKey", 0));
 
-        assert dynamicContentWithKey.isPresent();
+        assert dynamicContentWithKey.isSucess();
 
         runFlow("dynamicContentWithKey");
     }

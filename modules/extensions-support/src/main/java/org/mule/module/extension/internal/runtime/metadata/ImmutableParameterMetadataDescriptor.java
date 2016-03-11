@@ -7,7 +7,6 @@
 package org.mule.module.extension.internal.runtime.metadata;
 
 import org.mule.api.metadata.ParameterMetadataDescriptor;
-import org.mule.extension.api.introspection.ParameterModel;
 import org.mule.metadata.api.model.MetadataType;
 
 public final class ImmutableParameterMetadataDescriptor implements ParameterMetadataDescriptor
@@ -15,13 +14,13 @@ public final class ImmutableParameterMetadataDescriptor implements ParameterMeta
 
     private final String name;
     private final MetadataType type;
-    private final boolean isDynamic;
+    private final boolean hasDynamicType;
 
-    public ImmutableParameterMetadataDescriptor(ParameterModel param, boolean isDynamic)
+    public ImmutableParameterMetadataDescriptor(String name, MetadataType type, boolean hasDynamicType)
     {
-        this.name = param.getName();
-        this.type = param.getType();
-        this.isDynamic = isDynamic;
+        this.name = name;
+        this.type = type;
+        this.hasDynamicType = hasDynamicType;
     }
 
     @Override
@@ -31,9 +30,9 @@ public final class ImmutableParameterMetadataDescriptor implements ParameterMeta
     }
 
     @Override
-    public boolean isDynamic()
+    public boolean hasDynamicType()
     {
-        return isDynamic;
+        return hasDynamicType;
     }
 
     @Override

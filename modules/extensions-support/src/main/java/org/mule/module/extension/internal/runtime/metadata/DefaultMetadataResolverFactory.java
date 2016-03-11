@@ -30,7 +30,7 @@ public final class DefaultMetadataResolverFactory implements MetadataResolverFac
     }
 
     @Override
-    public MetadataResolver createResolver()
+    public MetadataResolver getResolver()
     {
         return resolver;
     }

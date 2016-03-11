@@ -22,6 +22,7 @@ import org.mule.api.lifecycle.Lifecycle;
 import org.mule.api.metadata.MetadataAware;
 import org.mule.api.metadata.MetadataKey;
 import org.mule.api.metadata.OperationMetadataDescriptor;
+import org.mule.api.metadata.Result;
 import org.mule.api.processor.MessageProcessor;
 import org.mule.extension.api.ExtensionManager;
 import org.mule.extension.api.introspection.OperationModel;
@@ -47,7 +48,6 @@ import org.mule.module.extension.internal.runtime.resolver.ResolverSet;
 import org.mule.util.StringUtils;
 
 import java.util.List;
-import java.util.Optional;
 
 import javax.inject.Inject;
 
@@ -184,31 +184,31 @@ public final class OperationMessageProcessor implements MessageProcessor, MuleCo
     }
 
     @Override
-    public Optional<List<MetadataKey>> getMetadataKeys(MuleEvent event)
+    public Result<List<MetadataKey>> getMetadataKeys(MuleEvent event)
     {
         return metadataMediator.getMetadataKeys(getMetadataContext(event));
     }
 
     @Override
-    public Optional<MetadataType> getContentMetadata(MuleEvent event, MetadataKey key)
+    public Result<MetadataType> getContentMetadata(MuleEvent event, MetadataKey key)
     {
         return metadataMediator.getContentMetadata(getMetadataContext(event), key);
     }
 
     @Override
-    public Optional<MetadataType> getOutputMetadata(MuleEvent event, MetadataKey key)
+    public Result<MetadataType> getOutputMetadata(MuleEvent event, MetadataKey key)
     {
         return metadataMediator.getOutputMetadata(getMetadataContext(event), key);
     }
 
     @Override
-    public OperationMetadataDescriptor getMetadata()
+    public Result<OperationMetadataDescriptor> getMetadata()
     {
         return metadataMediator.getMetadata();
     }
 
     @Override
-    public OperationMetadataDescriptor getMetadata(MuleEvent event, MetadataKey key)
+    public Result<OperationMetadataDescriptor> getMetadata(MuleEvent event, MetadataKey key)
     {
         return metadataMediator.getMetadata(getMetadataContext(event), key);
     }

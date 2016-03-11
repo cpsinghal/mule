@@ -7,23 +7,22 @@
 package org.mule.api.metadata;
 
 import org.mule.api.MuleEvent;
-import org.mule.api.MuleException;
+import org.mule.extension.api.metadata.MetadataResolvingException;
 import org.mule.metadata.api.model.MetadataType;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface MetadataAware
 {
 
-    Optional<List<MetadataKey>> getMetadataKeys(MuleEvent event) throws MuleException;
+    Result<List<MetadataKey>> getMetadataKeys(MuleEvent event) throws MetadataResolvingException;
 
-    Result<MetadataType> getContentMetadata(MuleEvent event, MetadataKey key) throws MuleException;
+    Result<MetadataType> getContentMetadata(MuleEvent event, MetadataKey key) throws MetadataResolvingException;
 
-    Result<MetadataType> getOutputMetadata(MuleEvent event, MetadataKey key) throws MuleException;
+    Result<MetadataType> getOutputMetadata(MuleEvent event, MetadataKey key) throws MetadataResolvingException;
 
-    Result<OperationMetadataDescriptor> getMetadata();
+    Result<OperationMetadataDescriptor> getMetadata() throws MetadataResolvingException;
 
-    Result<OperationMetadataDescriptor> getMetadata(MuleEvent event, MetadataKey key);
+    Result<OperationMetadataDescriptor> getMetadata(MuleEvent event, MetadataKey key) throws MetadataResolvingException;
 }
 
