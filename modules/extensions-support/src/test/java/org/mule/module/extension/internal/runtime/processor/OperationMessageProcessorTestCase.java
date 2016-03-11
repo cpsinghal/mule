@@ -508,9 +508,6 @@ public class OperationMessageProcessorTestCase extends AbstractMuleContextTestCa
 
         Result<MetadataType> outputMetadata = messageProcessor.getOutputMetadata(event, nullKeyMock);
 
-        verify(operationModel).getMetaDataResolverFactory();
-        verify(metadataResolverFactory).getResolver();
-
         assertThat(outputMetadata.isSucess(), is(true));
         assertThat(outputMetadata.get().getDescription(), is(typeMock.getDescription()));
     }
